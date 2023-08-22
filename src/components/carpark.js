@@ -5,8 +5,15 @@ const BASE_URL = "https://api.data.gov.sg/v1/transport/carpark-availability";
 const Carpark = () => {
   const [info, setInfo] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [timer, setTimer] = useState(0);
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      // polling, refresh new data every 60 seconds
+      setTimer(Date.now());
+    }, 60 * 1000);
+
+    // call API and update state
     (async function () {
       try {
         setIsLoading(true);
@@ -23,14 +30,15 @@ const Carpark = () => {
       }
     })();
 
-    // Return a cleanup function for when the component unmounts
     return () => {
-      console.log("Component will unmount");
+      console.log("Component Unmounted.");
+      clearInterval(interval);
     };
-  }, []);
+  }, [timer]);
 
-  if (isLoading) return <h1>Loading</h1>;
+  if (isLoading) return <h1>Loading...Please wait a moment...</h1>;
 
+  // logic to find the highest, lowest available lots in every category
   let smallHighest, mediumHighest, bigHighest, largeHighest;
   smallHighest = mediumHighest = bigHighest = largeHighest = -Infinity;
   let smallLowest, mediumLowest, bigLowest, largeLowest;
@@ -45,10 +53,9 @@ const Carpark = () => {
   let lotsAvailable = [];
 
   let { carpark_data } = info;
-  // carpark_data is an array with 2000 {carpark_info:[], carpark_number, update_datetime}
   for (let i = 0; i < carpark_data?.length; i++) {
     let currObj = carpark_data[i];
-    // currObj has multiple key values
+
     let carpark_number = currObj.carpark_number;
     let carpark_info = currObj.carpark_info; //an array
 
@@ -140,12 +147,6 @@ const Carpark = () => {
           smallLowest: {smallMap[smallLowest]?.toString()}, lots available:{" "}
           {smallLowest}
         </li>
-        <pre>{JSON.stringify(info, null, 2)}</pre>
-
-        {/* <li>largeHighest: , largeLowest: {largeLowest} </li>
-      <li>bigHighest: {bigHighest}, bigLowest: {bigLowest} </li>
-      <li>mediumHighest: {mediumHighest}, mediumLowest: {mediumLowest} </li>
-      <li>smallHighest: {smallHighest}, smallLowest: {smallLowest} </li> */}
       </ul>
     </>
   );
